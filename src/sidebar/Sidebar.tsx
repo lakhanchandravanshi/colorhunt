@@ -37,7 +37,7 @@ const Sidebar: React.FC = () => {
   return (
     <Box p="md" style={{ width: '100%' }}>
       <Stack gap={16}>
-        {/* Main navigation links */}
+      
         {links.map(({ label, icon: Icon, to }) => (
           <NavLink
             to={to}
@@ -59,7 +59,7 @@ const Sidebar: React.FC = () => {
           </NavLink>
         ))}
 
-        {/* Divider */}
+       
         <Box
           style={{
             height: 1,
@@ -68,28 +68,26 @@ const Sidebar: React.FC = () => {
           }}
         />
 
-        {/* Category list */}
+        
         <Stack gap={4}>
           {categories.map((cat) => (
-            <Text
+            <NavLink
               key={cat}
-              size="sm"
-              style={{
-                color: '#212529', // all text in black
-                cursor: 'pointer',
+              to={`/palettes/${cat.toLowerCase()}`}
+              style={({ isActive }) => ({
+                display: 'block',
                 padding: '4px 8px',
+                paddingLeft: '1.5rem', // indent
                 borderRadius: '6px',
-                transition: 'background 0.2s',
-              }}
-              onMouseOver={(e) => {
-                (e.currentTarget as HTMLDivElement).style.backgroundColor = '#f8f9fa';
-              }}
-              onMouseOut={(e) => {
-                (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent';
-              }}
+                textDecoration: 'none',
+                backgroundColor: isActive ? '#f1f3f5' : 'transparent',
+                color: '#212529',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '0.875rem',
+              })}
             >
               {cat}
-            </Text>
+            </NavLink>
           ))}
         </Stack>
       </Stack>
@@ -98,4 +96,11 @@ const Sidebar: React.FC = () => {
 };
 
 export default Sidebar;
+
+
+
+
+
+
+
 
