@@ -32,6 +32,8 @@ const categories = [
   'Winter',
   'Spring',
   'Happy',
+  'Nature',
+  'Earth'
 ];
 
 const Sidebar: React.FC = () => {
