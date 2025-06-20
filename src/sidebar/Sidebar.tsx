@@ -1,4 +1,5 @@
 
+// src/sidebar/Sidebar.tsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Box, Stack, Text } from '@mantine/core';
@@ -37,7 +38,6 @@ const Sidebar: React.FC = () => {
   return (
     <Box p="md" style={{ width: '100%' }}>
       <Stack gap={16}>
-      
         {links.map(({ label, icon: Icon, to }) => (
           <NavLink
             to={to}
@@ -59,7 +59,6 @@ const Sidebar: React.FC = () => {
           </NavLink>
         ))}
 
-       
         <Box
           style={{
             height: 1,
@@ -68,7 +67,6 @@ const Sidebar: React.FC = () => {
           }}
         />
 
-        
         <Stack gap={4}>
           {categories.map((cat) => (
             <NavLink
@@ -77,7 +75,7 @@ const Sidebar: React.FC = () => {
               style={({ isActive }) => ({
                 display: 'block',
                 padding: '4px 8px',
-                paddingLeft: '1.5rem', // indent
+                paddingLeft: '1.5rem',
                 borderRadius: '6px',
                 textDecoration: 'none',
                 backgroundColor: isActive ? '#f1f3f5' : 'transparent',
@@ -96,9 +94,6 @@ const Sidebar: React.FC = () => {
 };
 
 export default Sidebar;
-
-
-
 
 
 
