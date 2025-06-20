@@ -29,6 +29,8 @@ import Happy from './pages/subpages/Happy';
 import About from './menu/About';
 import TermService from './menu/TermService';
 import Create from './menu/Create';
+import Nature from './pages/subpages/Nature';
+import Earth from './pages/subpages/Earth';
 
 const AppContent: React.FC = () => {
   const location = useLocation(); // Get the current route
@@ -87,6 +89,8 @@ const AppContent: React.FC = () => {
             <Route path="/palettes/winter" element={<Winter />} />
             <Route path="/palettes/spring" element={<Spring />} />
             <Route path="/palettes/happy" element={<Happy />} />
+            <Route path="/palettes/nature" element={<Nature />} />
+            <Route path="/palettes/earth" element={<Earth />} />
             <Route path="/about" element={<About />} /> {/* Add About route */}
             <Route path="/privacy" element={<Privacy />} /> {/* Add Privacy route */}
             <Route path="/terms" element={<TermService />} />
