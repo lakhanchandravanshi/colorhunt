@@ -8,6 +8,11 @@ import {
   Text,
   Menu,
   Divider,
+  Popover,
+  ScrollArea,
+  Group,
+  Badge,
+  Stack,
 } from "@mantine/core";
 import {
   IconSearch,
@@ -15,10 +20,52 @@ import {
   IconBrandChrome,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { useFocusWithin } from "@mantine/hooks";
+
+const colorTags = [
+  "Blue",
+  "Teal",
+  "Mint",
+  "Green",
+  "Sage",
+  "Yellow",
+  "Beige",
+  "Brown",
+  "Orange",
+  "Peach",
+  "Red",
+  "Maroon",
+  "Pink",
+  "Purple",
+  "Navy",
+  "Black",
+  "Grey",
+  "White",
+];
+
+const collectionTags = [
+  "Pastel",
+  "Vintage",
+  "Retro",
+  "Neon",
+  "Gold",
+  "Light",
+  "Dark",
+  "Warm",
+  "Cold",
+  "Summer",
+  "Fall",
+  "Winter",
+  "Spring",
+  "Happy",
+  "Nature",
+  "Earth",
+];
 
 const Header = () => {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false); // Track menu open state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { ref, focused } = useFocusWithin();
 
   return (
     <Box
@@ -46,48 +93,99 @@ const Header = () => {
           </Text>
         </Flex>
 
-        {/* Middle: Search bar */}
-        <Flex justify="center" style={{ flex: 1 }}>
-          <TextInput
-            radius="xl"
-            placeholder="Search palettes"
-            rightSection={<IconSearch size={16} />}
-            style={{ width: "60%", minWidth: 300, maxWidth: 600 }}
-          />
+        {/* Middle: Search bar with Popover */}
+        <Flex justify="center" style={{ flex: 1 }} ref={ref}>
+          <Popover
+            opened={focused}
+            width="target"
+            position="bottom"
+            shadow="md"
+          >
+            <Popover.Target>
+              <TextInput
+                radius="xl"
+                placeholder="Search palettes"
+                rightSection={<IconSearch size={16} />}
+                style={{ width: "60%", minWidth: 300, maxWidth: 600 }}
+              />
+            </Popover.Target>
+
+            <Popover.Dropdown p="sm">
+              <ScrollArea h={250}>
+                <Stack gap="sm">
+                  <Text fw={600} size="sm">
+                    Colors
+                  </Text>
+                  <Group gap="xs" wrap="wrap">
+                    {colorTags.map((color) => (
+                      <Badge
+                        key={color}
+                        variant="light"
+                        color="gray"
+                        style={{ cursor: "pointer" }}
+                      >
+                        {color}
+                      </Badge>
+                    ))}
+                  </Group>
+
+                  <Text fw={600} size="sm" mt="sm">
+                    Collections
+                  </Text>
+                  <Group gap="xs" wrap="wrap">
+                    {collectionTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        color="gray"
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          navigate(`/palettes/${tag.toLowerCase()}`)
+                        }
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </Group>
+                </Stack>
+              </ScrollArea>
+            </Popover.Dropdown>
+          </Popover>
         </Flex>
 
-        {/* Right: Chrome button + menu */}
+        {/* Right: Chrome Button + Menu */}
         <Flex align="center" gap="sm">
           <Button
-          onClick={() =>
-            window.open("https://chromewebstore.google.com/detail/color-tab/hchlgfaicmddilenlflajnmomalehbom", "_blank")
-          }
+            onClick={() =>
+              window.open(
+                "https://chromewebstore.google.com/detail/color-tab/hchlgfaicmddilenlflajnmomalehbom",
+                "_blank"
+              )
+            }
             variant="default"
             radius="xl"
             leftSection={<IconBrandChrome size={16} />}
-            
           >
             Add to Chrome
           </Button>
 
-          {/* Three-dot dropdown menu */}
           <Menu
             shadow="md"
             width={200}
             position="bottom-end"
             withArrow
             offset={15}
-            onOpen={() => setMenuOpen(true)} // Set menuOpen to true when menu opens
-            onClose={() => setMenuOpen(false)} // Set menuOpen to false when menu closes
+            onOpen={() => setMenuOpen(true)}
+            onClose={() => setMenuOpen(false)}
           >
             <Menu.Target>
               <IconDotsVertical
                 style={{
                   cursor: "pointer",
-                  backgroundColor: menuOpen ? "#f1f3f5" : "transparent", // Change background color when menu is open
-                  borderRadius: "50%", // Optional: Make it circular
-                  padding: "3px", // Increased padding for a larger size
-                  fontSize: "20px", // Increased font size
+                  backgroundColor: menuOpen ? "#f1f3f5" : "transparent",
+                  borderRadius: "50%",
+                  padding: "3px",
+                  fontSize: "20px",
                 }}
               />
             </Menu.Target>
@@ -95,25 +193,26 @@ const Header = () => {
               <Menu.Item onClick={() => navigate("/palettes/new")}>
                 Palettes
               </Menu.Item>
-              <Menu.Item onClick={() => navigate("/create")}>
-                Create</Menu.Item>
+              <Menu.Item onClick={() => navigate("/create")}>Create</Menu.Item>
               <Menu.Item onClick={() => navigate("/palettes/collection")}>
                 Collection
               </Menu.Item>
               <Divider />
-              <Menu.Item  onClick={() => navigate("/about")}>
-                About</Menu.Item>
+              <Menu.Item onClick={() => navigate("/about")}>About</Menu.Item>
               <Menu.Item
                 onClick={() =>
                   window.open("https://www.instagram.com/color.hunt/", "_blank")
-                }>
+                }
+              >
                 Instagram
               </Menu.Item>
               <Divider />
               <Menu.Item onClick={() => navigate("/terms")}>
-                Terms of Service</Menu.Item>
-              <Menu.Item  onClick={() => navigate("/privacy")}>
-                Privacy Policy</Menu.Item>
+                Terms of Service
+              </Menu.Item>
+              <Menu.Item onClick={() => navigate("/privacy")}>
+                Privacy Policy
+              </Menu.Item>
               <Divider />
               <Text size="xs" c="dimmed" ta="center" py={5}>
                 Made by Gal Shir
