@@ -1,7 +1,13 @@
+
+
+
+
 import { useState, useRef, useEffect } from "react";
 import { HexColorPicker } from "react-colorful";
 import { supabase } from "../supabase/Client";
 import namer from "color-namer";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Convert hex to color name
 const getColorName = (hex: string): string => {
@@ -57,14 +63,16 @@ export default function PaletteForm() {
 
     if (error) {
       console.error("Supabase insert error:", error.message);
-      alert("Error saving to Supabase.");
+      toast.error("failed to submit");
     } else {
-      alert("Palette saved to Supabase!");
+      toast.success("successfully submited!");
     }
   };
 
   return (
     <div style={{ fontFamily: "sans-serif", padding: "40px" }}>
+      <ToastContainer position="top-right" autoClose={3000} />
+
       <div
         style={{
           display: "flex",
@@ -141,4 +149,5 @@ export default function PaletteForm() {
     </div>
   );
 }
+
 

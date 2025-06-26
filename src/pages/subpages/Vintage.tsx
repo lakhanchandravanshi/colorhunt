@@ -1,7 +1,17 @@
 import { supabase } from "../../supabase/Client";
 import React, { useEffect, useState } from "react";
-import { Card, Text, SimpleGrid, Box, Center, Loader } from "@mantine/core";
+import {
+  Card,
+  Text,
+  SimpleGrid,
+  Box,
+  Center,
+  Loader,
+  Button,
+} from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; // ✅ added
 
 interface ColorPalette {
   colors: string[];
@@ -16,6 +26,7 @@ const Vintage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const navigate = useNavigate(); // ✅ added
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -51,12 +62,34 @@ const Vintage: React.FC = () => {
     try {
       await navigator.clipboard.writeText(color);
       setCopiedColor(color);
-      setTimeout(() => {
-        setCopiedColor(null);
-      }, 1500);
+      setTimeout(() => setCopiedColor(null), 1500);
     } catch (err) {
       console.error("Failed to copy!", err);
     }
+  };
+
+  const handleAddToCollection = (palette: ColorPalette) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isAlreadyAdded = existing.some(
+      (p: ColorPalette) =>
+        p.title === palette.title && p.created_at === palette.created_at
+    );
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.title}-${palette.created_at}`,
+      });
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.title}-${palette.created_at}`,
+      autoClose: 1500,
+    });
   };
 
   return (
@@ -73,7 +106,12 @@ const Vintage: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${paletteIndex}`, {
+                  state: { table: "Vintage" },
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -102,7 +140,7 @@ const Vintage: React.FC = () => {
                     {hoveredKey === uniqueKey && (
                       <Box
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // prevent card click
                           handleCopy(trimmedColor);
                         }}
                         style={{
@@ -126,11 +164,21 @@ const Vintage: React.FC = () => {
                   </Box>
                 );
               })}
+
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
-                <Text size="sm" c="dimmed">
-                  ❤️ {palette.likes} · by {palette.creator}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ prevent navigate
+                    handleAddToCollection(palette);
+                  }}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}

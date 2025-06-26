@@ -1,9 +1,20 @@
 
 
+
 import { supabase } from "../supabase/Client";
 import React, { useEffect, useState } from "react";
-import { Card, Text, SimpleGrid, Box, Center, Loader } from "@mantine/core";
+import {
+  Card,
+  Text,
+  SimpleGrid,
+  Box,
+  Center,
+  Loader,
+  Button,
+} from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; // ✅ added
 
 interface ColorPalette {
   id: string;
@@ -19,6 +30,7 @@ const ColorList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const navigate = useNavigate(); // ✅ hook used here
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -54,12 +66,30 @@ const ColorList: React.FC = () => {
     try {
       await navigator.clipboard.writeText(color);
       setCopiedColor(color);
-      setTimeout(() => {
-        setCopiedColor(null);
-      }, 1500);
+      setTimeout(() => setCopiedColor(null), 1500);
     } catch (err) {
       console.error("Failed to copy!", err);
     }
+  };
+
+  const handleAddToCollection = (palette: ColorPalette) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isDuplicate = existing.some(
+      (item: ColorPalette) =>
+        item.title === palette.title &&
+        JSON.stringify(item.colors) === JSON.stringify(palette.colors)
+    );
+
+    if (isDuplicate) {
+      toast.info("Card already in collection");
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+    toast.success("Card added!");
   };
 
   return (
@@ -76,7 +106,11 @@ const ColorList: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{
+                transition: "transform 0.2s",
+                cursor: "pointer",
+              }}
+              onClick={() => navigate(`/palette/${palette.id}`)} // ✅ added navigation
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -122,11 +156,21 @@ const ColorList: React.FC = () => {
                   )}
                 </Box>
               ))}
+
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
-                <Text size="sm" c="dimmed">
-                  ❤️ {palette.likes} · by {palette.creator}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ prevent navigation
+                    handleAddToCollection(palette);
+                  }}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}
@@ -137,4 +181,3 @@ const ColorList: React.FC = () => {
 };
 
 export default ColorList;
-

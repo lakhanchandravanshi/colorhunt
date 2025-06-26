@@ -7,8 +7,11 @@ import {
   Box,
   Center,
   Loader,
+  Button,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; // ✅ added
 
 interface PastelItem {
   id: string;
@@ -25,6 +28,7 @@ const Pastel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const navigate = useNavigate(); // ✅ added
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -84,6 +88,30 @@ const Pastel: React.FC = () => {
     }
   };
 
+  const handleAddToCollection = (palette: PastelItem) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isAlreadyAdded = existing.some(
+      (p: PastelItem) => p.id === palette.id
+    );
+
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.id}`,
+      });
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.id}`,
+      autoClose: 1500,
+    });
+  };
+
   return (
     <Box p="md">
       {loading ? (
@@ -98,7 +126,12 @@ const Pastel: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "popular" }, // ✅ pass origin table
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -123,7 +156,7 @@ const Pastel: React.FC = () => {
                   {hoveredColor === color && (
                     <Box
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // prevent card click
                         handleCopy(color);
                       }}
                       style={{
@@ -146,9 +179,18 @@ const Pastel: React.FC = () => {
               ))}
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
-                <Text size="sm" c="dimmed">
-                  ❤️ {palette.likes} · by {palette.creator}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ prevent card navigation
+                    handleAddToCollection(palette);
+                  }}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}

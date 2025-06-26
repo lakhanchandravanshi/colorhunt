@@ -1,7 +1,15 @@
 import { supabase } from "../../supabase/Client";
 import React, { useEffect, useState } from "react";
-import { Card, Text, SimpleGrid, Box, Center, Loader } from "@mantine/core";
+import {
+  Card,
+  SimpleGrid,
+  Box,
+  Center,
+  Loader,
+  Button,
+} from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { toast } from "react-toastify";
 
 interface PaletteData {
   id: string;
@@ -37,7 +45,12 @@ const Retro: React.FC = () => {
       if (error) {
         console.error("Error fetching data:", error);
       } else {
-        setPalettes(data || []);
+        const parsedData = (data || []).map((item: any) => ({
+          ...item,
+          colors: typeof item.colors === "string" ? JSON.parse(item.colors) : item.colors,
+          names: typeof item.names === "string" ? JSON.parse(item.names) : item.names,
+        }));
+        setPalettes(parsedData);
       }
 
       setLoading(false);
@@ -58,6 +71,28 @@ const Retro: React.FC = () => {
     }
   };
 
+  const handleAddToCollection = (palette: PaletteData) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isAlreadyAdded = existing.some((p: PaletteData) => p.id === palette.id);
+
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.id}`,
+      });
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.id}`,
+      autoClose: 1500,
+    });
+  };
+
   return (
     <Box p="md">
       {loading ? (
@@ -66,9 +101,9 @@ const Retro: React.FC = () => {
         </Center>
       ) : (
         <SimpleGrid cols={getCols()} spacing="lg" mt="md">
-          {palettes.map((palette, index) => (
+          {palettes.map((palette) => (
             <Card
-              key={index}
+              key={palette.id}
               shadow="sm"
               radius="md"
               withBorder
@@ -80,7 +115,7 @@ const Retro: React.FC = () => {
                 (e.currentTarget.style.transform = "scale(1)")
               }
             >
-              {palette.colors?.slice(0, 4).map((color, idx) => (
+              {palette.colors.slice(0, 4).map((color, idx) => (
                 <Box
                   key={idx}
                   h={50}
@@ -119,9 +154,15 @@ const Retro: React.FC = () => {
                 </Box>
               ))}
               <Box mt="sm">
-                <Text size="sm" c="dimmed">
-                  {new Date(palette.created_at).toLocaleDateString()}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={() => handleAddToCollection(palette)}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}
@@ -132,5 +173,3 @@ const Retro: React.FC = () => {
 };
 
 export default Retro;
-
-
