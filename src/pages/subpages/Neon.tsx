@@ -1,7 +1,4 @@
-
-
-
-import { supabase } from "../supabase/Client";
+import { supabase } from "../../supabase/Client";
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -14,7 +11,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom"; // ✅ added
+import { useNavigate } from "react-router-dom";
 
 interface ColorPalette {
   id: string;
@@ -23,14 +20,15 @@ interface ColorPalette {
   likes: number;
   created_at: string;
   creator: string;
+  tags?: string[];
 }
 
-const ColorList: React.FC = () => {
+const Neon: React.FC = () => {
   const [palettes, setPalettes] = useState<ColorPalette[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
-  const navigate = useNavigate(); // ✅ hook used here
+  const navigate = useNavigate();
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -44,22 +42,27 @@ const ColorList: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchPalettes = async () => {
+    const fetchNeonPalettes = async () => {
       const { data, error } = await supabase
         .from("colors")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching Neon palettes:", error);
       } else {
-        setPalettes(data || []);
+        const parsed = (data || []).map((item) => ({
+          ...item,
+          colors: typeof item.colors === "string" ? JSON.parse(item.colors) : item.colors,
+          tags: typeof item.tags === "string" ? JSON.parse(item.tags) : item.tags,
+        }));
+        setPalettes(parsed);
       }
 
       setLoading(false);
     };
 
-    fetchPalettes();
+    fetchNeonPalettes();
   }, []);
 
   const handleCopy = async (color: string) => {
@@ -106,11 +109,12 @@ const ColorList: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{
-                transition: "transform 0.2s",
-                cursor: "pointer",
-              }}
-              onClick={() => navigate(`/palette/${palette.id}`)} // ✅ added navigation
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "colors" },
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -165,7 +169,7 @@ const ColorList: React.FC = () => {
                   variant="light"
                   color="blue"
                   onClick={(e) => {
-                    e.stopPropagation(); // ✅ prevent navigation
+                    e.stopPropagation();
                     handleAddToCollection(palette);
                   }}
                 >
@@ -180,4 +184,4 @@ const ColorList: React.FC = () => {
   );
 };
 
-export default ColorList;
+export default Neon;

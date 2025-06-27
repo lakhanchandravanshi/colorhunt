@@ -1,36 +1,32 @@
-
-
-
-import { supabase } from "../supabase/Client";
 import React, { useEffect, useState } from "react";
 import {
-  Card,
-  Text,
-  SimpleGrid,
   Box,
+  Card,
   Center,
   Loader,
+  SimpleGrid,
+  Text,
   Button,
+  Group,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom"; // ✅ added
+import { useNavigate } from "react-router-dom"; 
 
-interface ColorPalette {
-  id: string;
-  colors: string[];
+interface CollectionPalette {
+  id?: string;
   title: string;
-  likes: number;
-  created_at: string;
-  creator: string;
+  colors: string[];
+  created_at?: string;
+  creator?: string;
 }
 
-const ColorList: React.FC = () => {
-  const [palettes, setPalettes] = useState<ColorPalette[]>([]);
-  const [loading, setLoading] = useState(true);
+const Collection: React.FC = () => {
+  const [collection, setCollection] = useState<CollectionPalette[]>([]);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
-  const navigate = useNavigate(); // ✅ hook used here
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); 
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -43,23 +39,18 @@ const ColorList: React.FC = () => {
     return 4;
   };
 
+  const loadCollection = () => {
+    const saved = JSON.parse(localStorage.getItem("my_collection") || "[]");
+    setCollection(saved);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchPalettes = async () => {
-      const { data, error } = await supabase
-        .from("colors")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching data:", error);
-      } else {
-        setPalettes(data || []);
-      }
-
-      setLoading(false);
+    loadCollection();
+    window.addEventListener("collection_updated", loadCollection);
+    return () => {
+      window.removeEventListener("collection_updated", loadCollection);
     };
-
-    fetchPalettes();
   }, []);
 
   const handleCopy = async (color: string) => {
@@ -68,28 +59,16 @@ const ColorList: React.FC = () => {
       setCopiedColor(color);
       setTimeout(() => setCopiedColor(null), 1500);
     } catch (err) {
-      console.error("Failed to copy!", err);
+      console.error("Copy failed:", err);
     }
   };
 
-  const handleAddToCollection = (palette: ColorPalette) => {
-    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
-
-    const isDuplicate = existing.some(
-      (item: ColorPalette) =>
-        item.title === palette.title &&
-        JSON.stringify(item.colors) === JSON.stringify(palette.colors)
-    );
-
-    if (isDuplicate) {
-      toast.info("Card already in collection");
-      return;
-    }
-
-    const updated = [palette, ...existing];
+  const handleRemove = (index: number) => {
+    const updated = [...collection];
+    updated.splice(index, 1);
     localStorage.setItem("my_collection", JSON.stringify(updated));
-    window.dispatchEvent(new Event("collection_updated"));
-    toast.success("Card added!");
+    setCollection(updated);
+    toast.success("Card removed");
   };
 
   return (
@@ -98,19 +77,26 @@ const ColorList: React.FC = () => {
         <Center mt="xl">
           <Loader size="lg" />
         </Center>
+      ) : collection.length === 0 ? (
+        <Center mt="lg">
+          <Text size="lg" c="dimmed">
+            No cards added yet.
+          </Text>
+        </Center>
       ) : (
         <SimpleGrid cols={getCols()} spacing="lg" mt="md">
-          {palettes.map((palette) => (
+          {collection.map((palette, idx) => (
             <Card
-              key={palette.id}
+              key={idx}
               shadow="sm"
               radius="md"
               withBorder
-              style={{
-                transition: "transform 0.2s",
-                cursor: "pointer",
-              }}
-              onClick={() => navigate(`/palette/${palette.id}`)} // ✅ added navigation
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "popular" }, // change to correct table if needed
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -118,9 +104,9 @@ const ColorList: React.FC = () => {
                 (e.currentTarget.style.transform = "scale(1)")
               }
             >
-              {palette.colors.slice(0, 4).map((color, idx) => (
+              {palette.colors.slice(0, 4).map((color, i) => (
                 <Box
-                  key={idx}
+                  key={i}
                   h={50}
                   onMouseEnter={() => setHoveredColor(color)}
                   onMouseLeave={() => setHoveredColor(null)}
@@ -159,19 +145,26 @@ const ColorList: React.FC = () => {
 
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
+                <Text size="sm" c="dimmed">
+                  {palette.created_at
+                    ? new Date(palette.created_at).toLocaleDateString()
+                    : ""}
+                </Text>
+              </Box>
+
+              <Group mt="sm" justify="space-between">
                 <Button
-                  fullWidth
-                  mt="sm"
+                  color="red"
                   variant="light"
-                  color="blue"
+                  fullWidth
                   onClick={(e) => {
-                    e.stopPropagation(); // ✅ prevent navigation
-                    handleAddToCollection(palette);
+                    e.stopPropagation(); // Prevent card click
+                    handleRemove(idx);
                   }}
                 >
-                  Add
+                  Remove
                 </Button>
-              </Box>
+              </Group>
             </Card>
           ))}
         </SimpleGrid>
@@ -180,4 +173,4 @@ const ColorList: React.FC = () => {
   );
 };
 
-export default ColorList;
+export default Collection;

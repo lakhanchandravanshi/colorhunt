@@ -1,11 +1,7 @@
-
-
-
-import { supabase } from "../supabase/Client";
+import { supabase } from "../../supabase/Client";
 import React, { useEffect, useState } from "react";
 import {
   Card,
-  Text,
   SimpleGrid,
   Box,
   Center,
@@ -14,23 +10,21 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom"; // ✅ added
+import { useNavigate } from "react-router-dom";
 
-interface ColorPalette {
+interface PaletteData {
   id: string;
   colors: string[];
-  title: string;
-  likes: number;
+  names: string[];
   created_at: string;
-  creator: string;
 }
 
-const ColorList: React.FC = () => {
-  const [palettes, setPalettes] = useState<ColorPalette[]>([]);
+const Retro: React.FC = () => {
+  const [palettes, setPalettes] = useState<PaletteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
-  const navigate = useNavigate(); // ✅ hook used here
+  const navigate = useNavigate(); 
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -46,14 +40,25 @@ const ColorList: React.FC = () => {
   useEffect(() => {
     const fetchPalettes = async () => {
       const { data, error } = await supabase
-        .from("colors")
+        .from("create")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching data:", error);
       } else {
-        setPalettes(data || []);
+        const parsedData = (data || []).map((item: any) => ({
+          ...item,
+          colors:
+            typeof item.colors === "string"
+              ? JSON.parse(item.colors)
+              : item.colors,
+          names:
+            typeof item.names === "string"
+              ? JSON.parse(item.names)
+              : item.names,
+        }));
+        setPalettes(parsedData);
       }
 
       setLoading(false);
@@ -66,30 +71,34 @@ const ColorList: React.FC = () => {
     try {
       await navigator.clipboard.writeText(color);
       setCopiedColor(color);
-      setTimeout(() => setCopiedColor(null), 1500);
+      setTimeout(() => {
+        setCopiedColor(null);
+      }, 1500);
     } catch (err) {
       console.error("Failed to copy!", err);
     }
   };
 
-  const handleAddToCollection = (palette: ColorPalette) => {
+  const handleAddToCollection = (palette: PaletteData) => {
     const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
 
-    const isDuplicate = existing.some(
-      (item: ColorPalette) =>
-        item.title === palette.title &&
-        JSON.stringify(item.colors) === JSON.stringify(palette.colors)
-    );
+    const isAlreadyAdded = existing.some((p: PaletteData) => p.id === palette.id);
 
-    if (isDuplicate) {
-      toast.info("Card already in collection");
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.id}`,
+      });
       return;
     }
 
     const updated = [palette, ...existing];
     localStorage.setItem("my_collection", JSON.stringify(updated));
     window.dispatchEvent(new Event("collection_updated"));
-    toast.success("Card added!");
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.id}`,
+      autoClose: 1500,
+    });
   };
 
   return (
@@ -106,11 +115,12 @@ const ColorList: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{
-                transition: "transform 0.2s",
-                cursor: "pointer",
-              }}
-              onClick={() => navigate(`/palette/${palette.id}`)} // ✅ added navigation
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "create" }, // ✅ table passed
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -135,7 +145,7 @@ const ColorList: React.FC = () => {
                   {hoveredColor === color && (
                     <Box
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // ✅ Prevent card click
                         handleCopy(color);
                       }}
                       style={{
@@ -156,16 +166,14 @@ const ColorList: React.FC = () => {
                   )}
                 </Box>
               ))}
-
               <Box mt="sm">
-                <Text fw={600}>{palette.title}</Text>
                 <Button
                   fullWidth
                   mt="sm"
                   variant="light"
                   color="blue"
                   onClick={(e) => {
-                    e.stopPropagation(); // ✅ prevent navigation
+                    e.stopPropagation(); // ✅ Prevent navigation
                     handleAddToCollection(palette);
                   }}
                 >
@@ -180,4 +188,4 @@ const ColorList: React.FC = () => {
   );
 };
 
-export default ColorList;
+export default Retro;
