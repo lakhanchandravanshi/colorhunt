@@ -1,3 +1,4 @@
+
 import { supabase } from "../supabase/Client";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,8 +8,11 @@ import {
   Box,
   Center,
   Loader,
+  Button,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; // ✅ Added import
 
 interface PaletteItem {
   id: string;
@@ -26,6 +30,8 @@ const Random: React.FC = () => {
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
+  const navigate = useNavigate(); // ✅ Use navigate
+
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
   const isMd = useMediaQuery("(max-width: 992px)");
@@ -40,26 +46,28 @@ const Random: React.FC = () => {
   useEffect(() => {
     const fetchRandomFromPopular = async () => {
       const { data, error } = await supabase.from("popular").select("*");
-  
+
       if (error) {
         console.error("Error fetching palettes:", error);
       } else {
         const parsed = (data || []).map((item) => ({
           ...item,
-          colors: typeof item.colors === "string" ? JSON.parse(item.colors) : item.colors,
+          colors:
+            typeof item.colors === "string"
+              ? JSON.parse(item.colors)
+              : item.colors,
         }));
-  
-        // Shuffle full data without slicing
+
         const shuffled = parsed.sort(() => 0.5 - Math.random());
         setPalettes(shuffled);
       }
-  
+
       setLoading(false);
     };
-  
+
     fetchRandomFromPopular();
   }, []);
-  
+
   const handleCopy = async (color: string) => {
     try {
       await navigator.clipboard.writeText(color);
@@ -68,6 +76,29 @@ const Random: React.FC = () => {
     } catch (err) {
       console.error("Failed to copy color:", err);
     }
+  };
+
+  const handleAddToCollection = (palette: PaletteItem) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isAlreadyAdded = existing.some(
+      (p: PaletteItem) => p.id === palette.id
+    );
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.id}`,
+      });
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.id}`,
+      autoClose: 1500,
+    });
   };
 
   return (
@@ -84,9 +115,21 @@ const Random: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              style={{
+                cursor: "pointer",
+                transition: "transform 0.2s",
+              }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "popular" }, 
+                })
+              }
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "scale(1.03)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+              }
             >
               {(palette.colors as string[]).slice(0, 4).map((color, idx) => (
                 <Box
@@ -126,11 +169,21 @@ const Random: React.FC = () => {
                   )}
                 </Box>
               ))}
+
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
-                <Text size="sm" c="dimmed">
-                  ❤️ {palette.likes} · by {palette.creator}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    handleAddToCollection(palette);
+                  }}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}
@@ -141,3 +194,5 @@ const Random: React.FC = () => {
 };
 
 export default Random;
+
+

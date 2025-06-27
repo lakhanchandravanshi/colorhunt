@@ -1,7 +1,18 @@
-import { supabase } from "../supabase/Client";
+
 import React, { useEffect, useState } from "react";
-import { Card, Text, SimpleGrid, Box, Center, Loader } from "@mantine/core";
+import {
+  Box,
+  Card,
+  Center,
+  Loader,
+  SimpleGrid,
+  Text,
+  Button,
+} from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { supabase } from "../supabase/Client";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; // ✅ import navigate
 
 interface PopularItem {
   id: string;
@@ -17,6 +28,7 @@ const Popular: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const navigate = useNavigate(); // ✅ setup
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -34,7 +46,7 @@ const Popular: React.FC = () => {
       const { data, error } = await supabase
         .from("popular")
         .select("*")
-        .order("likes", { ascending: false }); // <-- highest first
+        .order("likes", { ascending: false });
 
       if (error) {
         console.error("Error fetching popular palettes:", error);
@@ -67,6 +79,27 @@ const Popular: React.FC = () => {
     }
   };
 
+  const handleAddToCollection = (palette: PopularItem) => {
+    const existing = JSON.parse(localStorage.getItem("my_collection") || "[]");
+
+    const isAlreadyAdded = existing.some((p: PopularItem) => p.id === palette.id);
+    if (isAlreadyAdded) {
+      toast.info("Already in collection", {
+        toastId: `exists-${palette.id}`,
+      });
+      return;
+    }
+
+    const updated = [palette, ...existing];
+    localStorage.setItem("my_collection", JSON.stringify(updated));
+    window.dispatchEvent(new Event("collection_updated"));
+
+    toast.success("Added to collection", {
+      toastId: `added-${palette.id}`,
+      autoClose: 1500,
+    });
+  };
+
   return (
     <Box p="md">
       {loading ? (
@@ -81,7 +114,12 @@ const Popular: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "popular" }, // ✅ send table info
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -127,11 +165,21 @@ const Popular: React.FC = () => {
                   )}
                 </Box>
               ))}
+
               <Box mt="sm">
                 <Text fw={600}>{palette.title}</Text>
-                <Text size="sm" c="dimmed">
-                  ❤️ {palette.likes} · by {palette.creator}
-                </Text>
+                <Button
+                  fullWidth
+                  mt="sm"
+                  variant="light"
+                  color="blue"
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ prevents triggering card navigation
+                    handleAddToCollection(palette);
+                  }}
+                >
+                  Add
+                </Button>
               </Box>
             </Card>
           ))}
@@ -142,3 +190,4 @@ const Popular: React.FC = () => {
 };
 
 export default Popular;
+
