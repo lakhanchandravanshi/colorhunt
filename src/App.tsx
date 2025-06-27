@@ -1,6 +1,4 @@
 
-
-
 // App.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -37,7 +35,7 @@ import Happy from './pages/subpages/Happy';
 import Nature from './pages/subpages/Nature';
 import Earth from './pages/subpages/Earth';
 
-// ✅ New Palette Detail Page
+
 import PaletteDetail from './pages/PaletteDetail';
 
 const AppContent: React.FC = () => {
@@ -95,7 +93,7 @@ const AppContent: React.FC = () => {
             <Route path="/palettes/nature" element={<Nature />} />
             <Route path="/palettes/earth" element={<Earth />} />
 
-            {/* ✅ Palette Detail route added */}
+          
             <Route path="/palette/:id" element={<PaletteDetail />} />
 
             <Route path="/about" element={<About />} />

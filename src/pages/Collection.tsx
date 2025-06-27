@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom"; 
 
 interface CollectionPalette {
   id?: string;
@@ -25,6 +26,7 @@ const Collection: React.FC = () => {
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); 
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -89,7 +91,12 @@ const Collection: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "popular" }, // change to correct table if needed
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -150,7 +157,10 @@ const Collection: React.FC = () => {
                   color="red"
                   variant="light"
                   fullWidth
-                  onClick={() => handleRemove(idx)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
+                    handleRemove(idx);
+                  }}
                 >
                   Remove
                 </Button>
@@ -164,4 +174,3 @@ const Collection: React.FC = () => {
 };
 
 export default Collection;
-

@@ -1,3 +1,6 @@
+
+
+
 import { supabase } from "../../supabase/Client";
 import React, { useEffect, useState } from "react";
 import {
@@ -14,6 +17,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom"; // ✅ added
 
 interface ColorPalette {
+  id: string;
   colors: string[];
   title: string;
   likes: number;
@@ -43,7 +47,7 @@ const Vintage: React.FC = () => {
     const fetchPalettes = async () => {
       const { data, error } = await supabase
         .from("Vintage")
-        .select("colors, title, likes, created_at, creator")
+        .select("id, colors, title, likes, created_at, creator")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -102,13 +106,13 @@ const Vintage: React.FC = () => {
         <SimpleGrid cols={getCols()} spacing="lg" mt="md">
           {palettes.map((palette, paletteIndex) => (
             <Card
-              key={`${palette.title}-${palette.created_at}-${paletteIndex}`}
+              key={`${palette.id}`}
               shadow="sm"
               radius="md"
               withBorder
               style={{ transition: "transform 0.2s", cursor: "pointer" }}
               onClick={() =>
-                navigate(`/palette/${paletteIndex}`, {
+                navigate(`/palette/${palette.id}`, {
                   state: { table: "Vintage" },
                 })
               }

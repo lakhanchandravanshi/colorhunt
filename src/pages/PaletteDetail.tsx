@@ -1,5 +1,3 @@
-
-
 import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase/Client";
@@ -14,11 +12,17 @@ import {
   Group,
 } from "@mantine/core";
 import { IconDownload, IconLink } from "@tabler/icons-react";
+import { toast } from "react-toastify";
+
+// Tables to search dynamically
+const KNOWN_TABLES = ["colors", "popular", "random", "create"];
+// Tags to exclude from display
+const EXCLUDED_TAGS = ["Pastel", "Vintage", "Retro", "Neon"];
 
 const PaletteDetail = () => {
   const { id } = useParams();
   const location = useLocation();
-  const table = location.state?.table || "colors"; // fallback if state not passed
+  const passedTable = location.state?.table || null;
 
   const [palette, setPalette] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -27,27 +31,30 @@ const PaletteDetail = () => {
 
   useEffect(() => {
     const fetchPalette = async () => {
-      const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .eq("id", id)
-        .single();
+      const tablesToSearch = passedTable
+        ? [passedTable, ...KNOWN_TABLES.filter((t) => t !== passedTable)]
+        : KNOWN_TABLES;
 
-      if (error) {
-        console.error("Error fetching palette:", error);
-      }
+      for (const tableName of tablesToSearch) {
+        const { data } = await supabase
+          .from(tableName)
+          .select("*")
+          .eq("id", id)
+          .single();
 
-      if (data) {
-        data.colors = typeof data.colors === "string" ? JSON.parse(data.colors) : data.colors;
-        data.tags = typeof data.tags === "string" ? JSON.parse(data.tags) : data.tags;
-        setPalette(data);
+        if (data) {
+          data.colors = typeof data.colors === "string" ? JSON.parse(data.colors) : data.colors;
+          data.tags = typeof data.tags === "string" ? JSON.parse(data.tags) : data.tags;
+          setPalette(data);
+          break;
+        }
       }
 
       setLoading(false);
     };
 
     fetchPalette();
-  }, [id, table]);
+  }, [id, passedTable]);
 
   const hexToRgb = (hex: string): [number, number, number] | null => {
     const value = hex.replace("#", "");
@@ -66,6 +73,33 @@ const PaletteDetail = () => {
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
+    } catch (err) {
+      console.error("Failed to copy link", err);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    const node = document.getElementById("palette-box");
+    if (!node) return;
+
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(node);
+      const dataUrl = canvas.toDataURL("image/png");
+
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `${palette.title || "palette"}.png`;
+      link.click();
+    } catch (err) {
+      console.error("Download failed", err);
+    }
+  };
+
   if (loading) {
     return (
       <Center mt="xl">
@@ -74,12 +108,19 @@ const PaletteDetail = () => {
     );
   }
 
-  if (!palette) return <Text ta="center">Palette not found</Text>;
+  if (!palette) {
+    return (
+      <Center mt="xl">
+        <Text size="lg" c="dimmed">Palette not found.</Text>
+      </Center>
+    );
+  }
 
   return (
     <Box p="xl">
       <Flex direction="column" align="center" mx="auto" w="100%">
         <Box
+          id="palette-box"
           w={300}
           style={{
             borderRadius: "10px",
@@ -125,10 +166,18 @@ const PaletteDetail = () => {
         </Box>
 
         <Group mt="md" gap="md">
-          <Button variant="default" leftSection={<IconDownload size={16} />}>
+          <Button
+            variant="default"
+            leftSection={<IconDownload size={16} />}
+            onClick={handleDownloadImage}
+          >
             Image
           </Button>
-          <Button variant="default" leftSection={<IconLink size={16} />}>
+          <Button
+            variant="default"
+            leftSection={<IconLink size={16} />}
+            onClick={handleCopyLink}
+          >
             Link
           </Button>
         </Group>
@@ -165,11 +214,13 @@ const PaletteDetail = () => {
         </Flex>
 
         <Flex mt="lg" gap="sm" wrap="wrap" justify="center">
-          {palette.tags?.map((tag: string, i: number) => (
-            <Badge key={i} variant="light" size="lg" color="gray">
-              {tag}
-            </Badge>
-          ))}
+          {palette.tags
+            ?.filter((tag: string) => !EXCLUDED_TAGS.includes(tag))
+            .map((tag: string, i: number) => (
+              <Badge key={i} variant="light" size="lg" color="gray">
+                {tag}
+              </Badge>
+            ))}
         </Flex>
       </Flex>
     </Box>
@@ -177,4 +228,3 @@ const PaletteDetail = () => {
 };
 
 export default PaletteDetail;
-

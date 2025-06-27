@@ -10,6 +10,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 interface PaletteData {
   id: string;
@@ -23,6 +24,7 @@ const Retro: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const navigate = useNavigate(); 
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -47,8 +49,14 @@ const Retro: React.FC = () => {
       } else {
         const parsedData = (data || []).map((item: any) => ({
           ...item,
-          colors: typeof item.colors === "string" ? JSON.parse(item.colors) : item.colors,
-          names: typeof item.names === "string" ? JSON.parse(item.names) : item.names,
+          colors:
+            typeof item.colors === "string"
+              ? JSON.parse(item.colors)
+              : item.colors,
+          names:
+            typeof item.names === "string"
+              ? JSON.parse(item.names)
+              : item.names,
         }));
         setPalettes(parsedData);
       }
@@ -107,7 +115,12 @@ const Retro: React.FC = () => {
               shadow="sm"
               radius="md"
               withBorder
-              style={{ transition: "transform 0.2s" }}
+              style={{ transition: "transform 0.2s", cursor: "pointer" }}
+              onClick={() =>
+                navigate(`/palette/${palette.id}`, {
+                  state: { table: "create" }, // ✅ table passed
+                })
+              }
               onMouseEnter={(e) =>
                 (e.currentTarget.style.transform = "scale(1.03)")
               }
@@ -132,7 +145,7 @@ const Retro: React.FC = () => {
                   {hoveredColor === color && (
                     <Box
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // ✅ Prevent card click
                         handleCopy(color);
                       }}
                       style={{
@@ -159,7 +172,10 @@ const Retro: React.FC = () => {
                   mt="sm"
                   variant="light"
                   color="blue"
-                  onClick={() => handleAddToCollection(palette)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // ✅ Prevent navigation
+                    handleAddToCollection(palette);
+                  }}
                 >
                   Add
                 </Button>

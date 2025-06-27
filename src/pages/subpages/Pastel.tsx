@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom"; // ✅ added
+import { useNavigate } from "react-router-dom";
 
 interface PastelItem {
   id: string;
@@ -28,7 +28,7 @@ const Pastel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
-  const navigate = useNavigate(); // ✅ added
+  const navigate = useNavigate(); 
 
   const isXs = useMediaQuery("(max-width: 576px)");
   const isSm = useMediaQuery("(max-width: 768px)");
@@ -185,7 +185,7 @@ const Pastel: React.FC = () => {
                   variant="light"
                   color="blue"
                   onClick={(e) => {
-                    e.stopPropagation(); // ✅ prevent card navigation
+                    e.stopPropagation(); 
                     handleAddToCollection(palette);
                   }}
                 >
